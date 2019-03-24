@@ -13,7 +13,7 @@ $rmq_channel = $rmq_connection->getChannel();
 
 //Create Stuff
 $createStuff_callback = function ($request) {
-	$logger = new LogWriter('/var/logs/dnd/MessageBoard.create.log');
+	$logger = new LogWriter('/var/log/dnd/MessageBoard.create.log');
 	$logger->info("Creating stuff for User...");
 	$requestData = unserialize($request->body);
 	$requestFlow = $requestData[0];
