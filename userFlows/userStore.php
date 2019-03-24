@@ -81,5 +81,5 @@ while (true) {
 }
 
 $chan->close();
-$rabbitConn->close();
+$rmq_connection->close();
 ?>

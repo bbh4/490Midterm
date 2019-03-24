@@ -3,6 +3,7 @@
 class ForumsDB {
 	private $connection;
 
+	private $host = 'host'
 	private $user = 'db user-name';
 	private $pass = 'db password';
 	private $name = 'db name';
