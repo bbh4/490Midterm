@@ -8,53 +8,54 @@ use rabbit\RabbitMQConnection;
 use databases\MongoDB;
 use logging\LogWriter;
 
-$logger = new LogWriter('/var/log/dnd/retrieval.log');
 
-$client = (new MongoDB())->getConnection();
 
 $rmq_connection = new RabbitMQConnection('RetrievalExchange', 'userFlows');
 $rmq_channel = $rmq_connection->getChannel();
 
 // User Retrieve
-$userRetrieve_callback = function ($req) {
-	$DnDdb = $client->db;
+$userRetrieve_callback = function ($request) {
+	$logger = new LogWriter('/var/log/dnd/retrieval.log');
+	$client = (new MongoDB())->getConnection();
+	$DnDdn = $client->db;
 	$charCollection = $DnDdn->characters;
 	$userCollection = $DnDdn->users;
-	$reqArray = unserialize($req->body);
-	$logger->info("This is body: " . $req->body);
+	$reqArray = unserialize($request->body);
+	$logger->info("This is body: " . $request->body);
 	$logger->info("This is 0: " . $reqArray[0]);
 	$logger->info("This is 1: " . $reqArray[1]);
-	$reqStr = $reqArray[0];
-	$reqDoc = $reqArray[1];
+	$requestFlow = $reqArray[0];
+	$username = $reqArray[1];
 	$error = "E";
 
-	$msg = new AMQPMessage (
-		$error,
-		array('correlation_id' => $char->get('correlation_id'))
-	);
 
-	switch($req){
+	switch($requestFlow){
 		case "userDoc":
 			$logger->info("Getting User doc...");
-			$foundUserDoc = $userCollection->find(['username' => $reqDoc]);
+			$userDocument = $userCollection->find(['username' => $username]);
 			$msg = new AMQPMessage (
-				$foundUserDoc,
-				array('correlation_id' => $char->get('correlation_id'))
+				$userDocument,
+				array('correlation_id' => $request->get('correlation_id'))
 				);
-			$logger->info("document found: " . $foundUserDoc);
+			$logger->info("document found: " . $userDocument);
 			break;
 		case "charDoc":
 			$logger->info("Getting Character doc...");
-			$foundChar = $charCollection->find(['_id' => $reqDoc]);
+			$character = $charCollection->find(['_id' => $username]);
 			$msg = new AMQPMessage (
-				$foundChar,
-				array('correlation_id' => $char->get('correlation_id'))
+				$character,
+				array('correlation_id' => $request->get('correlation_id'))
 				);
-			$logger->info("Character found: " . $foundChar);
+			$logger->info("Character found: " . $character);
 			break;
+		default:
+			$msg = new AMQPMessage (
+				$error,
+				array('correlation_id' => $request->get('correlation_id'))
+			);
 	}
 
-$req->delivery_info['channel']->basic_publish( $msg, '', $req->get('reply_to'));
+$request->delivery_info['channel']->basic_publish( $msg, '', $request->get('reply_to'));
 $logger->info("Sent back Message");
 };
 

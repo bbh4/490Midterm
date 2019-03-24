@@ -7,15 +7,13 @@ use PhpAmqpLib\Message\AMQPMessage;
 use databases\AuthDB;
 use logging\LogWriter;
 
-$logger = new LogWriter('/var/log/dnd/register.log');
-
-$db_connection = (new AuthDB())->getConnection();
-
 $rmq_connection = new RabbitMQConnection('RegisterExchange', 'userAuthentication');
 $rmq_channel = $rmq_connection->getChannel();
 
 //register
 $register_callback = function ($request) {
+	$db_connection = (new AuthDB())->getConnection();
+	$logger = new LogWriter('/var/log/dnd/register.log');
 	$logger->info("Registering User...");
 	$result = unserialize($request->body);
 	$user = $result[0];

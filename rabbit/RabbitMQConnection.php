@@ -14,7 +14,7 @@ class RabbitMQConnection {
 			'', // port
 			'', // user
 			'', // pass
-			''  // vhost
+			$vhost  // virtual host
 		);
 		$this->channel  = $connection->channel();
 

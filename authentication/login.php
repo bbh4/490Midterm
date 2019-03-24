@@ -8,14 +8,12 @@ use rabbit\RabbitMQConnection;
 use databases\AuthDB;
 use logging\LogWriter;
 
-$logger = new LogWriter('/var/log/dnd/login.log');
-
-$db_connection = (new AuthDB())->getConnection();
-
 $rmq_connection = new RabbitMQConnection('LoginExchange', 'userAuthentication');
 $rmq_channel = $rmq_connection->getChannel();
 
-function execute($request) {
+$login_callback = function($request) {
+	$db_connection = (new AuthDB())->getConnection();
+	$logger = new LogWriter('/var/log/dnd/login.log');
 	$logger->info("Logging in User...");
 	$result = unserialize($request->body);
 	$logger->info("This is body: " . $request->body);
@@ -41,25 +39,24 @@ function execute($request) {
 
 		// pass value to the command
 		$stmt->bindParam(1, $user, PDO::PARAM_STR);
-		
+
 		// execute the stored procedure
-		$isSuccessful = $stmt->execute();
+		$stmt->execute();
 
 		$db_response = $stmt->fetch(PDO::FETCH_ASSOC);
-		print_r($db_response);
 
-			if (isset($db_response))
-			{
-				$passver = password_verify($pass, $db_response['password']);
+		if (isset($db_response))
+		{
+			$passver = password_verify($pass, $db_response['password']);
 
-				if($passver){
-					$msg = new AMQPMessage (
-						$success,
-						array('correlation_id' => $request->get('correlation_id'))
-					);
-					$logger->info("Success");
-				}
+			if($passver){
+				$msg = new AMQPMessage (
+					$success,
+					array('correlation_id' => $request->get('correlation_id'))
+				);
+				$logger->info("Success");
 			}
+		}
 
 	} catch (PDOException $e) {
 		$logger->error("Error occurred:" . $e->getMessage());
@@ -72,7 +69,6 @@ function execute($request) {
 
 $rmq_channel->basic_qos(null, 1, null);
 
-$login_callback = execute();
 $rmq_channel->basic_consume($queue_name, '', false, true, false, false, $login_callback);
 
 while (true) {

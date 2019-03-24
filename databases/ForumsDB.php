@@ -3,7 +3,7 @@
 class ForumsDB {
 	private $connection;
 
-	private $host = 'host'
+	private $host = 'host';
 	private $user = 'db user-name';
 	private $pass = 'db password';
 	private $name = 'db name';
@@ -15,7 +15,7 @@ class ForumsDB {
 							array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'utf8'"));
 		$this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 	}
-	
+
 	public function getConnection()	{
 		return $this->connection;
 	}
