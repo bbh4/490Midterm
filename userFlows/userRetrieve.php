@@ -10,7 +10,7 @@ use logging\LogWriter;
 
 
 
-$rmq_connection = new RabbitMQConnection('RetrievalExchange', 'userFlows');
+$rmq_connection = new RabbitMQConnection('RetrieveExchange', 'storage');
 $rmq_channel = $rmq_connection->getChannel();
 
 // User Retrieve

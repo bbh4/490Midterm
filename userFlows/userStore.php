@@ -8,7 +8,7 @@ use rabbit\RabbitMQConnection;
 use databases\MongoDB;
 use logging\LogWriter;
 
-$rmq_connection = new RabbitMQConnection('StorageExchange', 'userFlows');
+$rmq_connection = new RabbitMQConnection('StoreExchange', 'storage');
 $rmq_channel = $rmq_connection->getChannel();
 
 // User Update

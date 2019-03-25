@@ -8,7 +8,7 @@ use rabbit\RabbitMQConnection;
 use databases\ForumsDB;
 use logging\LogWriter;
 
-$rmq_connection = new RabbitMQConnection('messageBoardExchange', 'messageBoard');
+$rmq_connection = new RabbitMQConnection('GetPostsExchange', 'messageBoard');
 $rmq_channel = $rmq_connection->getChannel();
 
 //get forums
