@@ -1,20 +1,19 @@
 <?php
 require_once '../vendor/autoload.php';
-require_once '../databases/MongoDB.php';
+require_once '../databases/MongoConnector.php';
 require_once '../rabbit/RabbitMQConnection';
 require_once '../logging/LogWriter.php';
 use PhpAmqpLib\Message\AMQPMessage;
 use rabbit\RabbitMQConnection;
-use databases\MongoDB;
 use logging\LogWriter;
 
-$rmq_connection = new RabbitMQConnection('StoreExchange', 'storage');
+$rmq_connection = new RabbitMQConnection('storage_user', 'StoreExchange', 'storage');
 $rmq_channel = $rmq_connection->getChannel();
 
 // User Update
 $userStore_callback = function ($request) {
 	$logger = new LogWriter('/var/log/dnd/userStorage.log');
-	$client = (new MongoDB())->getConnection();
+	$client = (new MongoConnector())->getConnection();
 	$database = $client->db;
 	$charCollection = $database->characters;
 	$userCollection = $database->users;

@@ -1,28 +1,27 @@
 <?php
 require_once '../vendor/autoload.php';
 require_once '../databases/AuthDB.php';
-require_once '../rabbit/RabbitMQConnection';
+require_once '../rabbit/RabbitMQConnection.php';
 require_once '../logging/LogWriter.php';
 use PhpAmqpLib\Message\AMQPMessage;
 use rabbit\RabbitMQConnection;
-use databases\AuthDB;
 use logging\LogWriter;
 
-$rmq_connection = new RabbitMQConnection('LoginExchange', 'authentication');
+$rmq_connection = new RabbitMQConnection('auth_user','LoginExchange', 'authentication');
 $rmq_channel = $rmq_connection->getChannel();
 
 $login_callback = function($request) {
 	$db_connection = (new AuthDB())->getConnection();
 	$logger = new LogWriter('/var/log/dnd/login.log');
-	$logger->info("Logging in User...");
-	$result = unserialize($request->body);
+	$logger->info("Logging in username...");
+	$requestData = unserialize($request->body);
 	$logger->info("This is body: " . $request->body);
-	$logger->info("This is 0: " . $result[0]);
-	$logger->info("This is 1: " . $result[1]);
-	$user = $result[0];
-	$pass = $result[1];
-	$error = "E";
-	$success = "S";
+	$logger->info("This is 0: " . $requestData[0]);
+	$logger->info("This is 1: " . $requestData[1]);
+	$username = $requestData[0];
+	$pass = $requestData[1];
+	$error = 'E';
+	$success = 'S';
 
 	$msg = new AMQPMessage (
 		$error,
@@ -38,7 +37,7 @@ $login_callback = function($request) {
 		$stmt = $db_connection->prepare($sql);
 
 		// pass value to the command
-		$stmt->bindParam(1, $user, PDO::PARAM_STR);
+		$stmt->bindParam(1, $username, PDO::PARAM_STR);
 
 		// execute the stored procedure
 		$stmt->execute();
@@ -62,14 +61,14 @@ $login_callback = function($request) {
 		$logger->error("Error occurred:" . $e->getMessage());
 	}
 
-	$request->delivery_info['channel']->basic_publish( $msg, '', $request->get('reply_to'));
+	$request->delivery_info['channel']->basic_publish($msg, '', $request->get('reply_to'));
 	$logger->info("Sent back Message");
 
 };
 
 $rmq_channel->basic_qos(null, 1, null);
 
-$rmq_channel->basic_consume($queue_name, '', false, true, false, false, $login_callback);
+$rmq_channel->basic_consume($rmq_connection->getQueueName(), '', false, true, false, false, $login_callback);
 
 while (true) {
 	$rmq_channel->wait();

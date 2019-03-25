@@ -1,7 +1,7 @@
 <?php
-namespace rabbit;
 require_once '../vendor/autoload.php';
 use PhpAmqpLib\Connection\AMQPStreamConnection;
+use PhpAmqpLib\Message\AMQPMessage;
 
 class RabbitMQConnection {
 
@@ -37,3 +37,27 @@ class RabbitMQConnection {
 		$this->connection->close();
 	}
 }
+
+$rmq_connection = new RabbitMQConnection('auth_user', 'LoginExchange', 'authentication');
+$rmq_channel = $rmq_connection->getChannel();
+
+//register
+$register_callback = function ($request) {
+	echo "sending msg";
+	$msg = new AMQPMessage (
+		"blah",
+		array('correlation_id' => $request->get('correlation_id'))
+	);
+
+	$request->delivery_info['channel']->basic_publish( $msg, '', $request->get('reply_to'));
+};
+
+$rmq_channel->basic_qos(null, 1, null);
+echo $rmq_connection->getQueueName() . PHP_EOL;
+$rmq_channel->basic_consume($rmq_connection->getQueueName(), '', false, true, false, false, $register_callback);
+
+while (true) {
+	$rmq_channel->wait();
+}
+
+$rmq_connection->close();

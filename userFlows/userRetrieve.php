@@ -1,25 +1,23 @@
 <?php
 require_once '../vendor/autoload.php';
-require_once '../databases/MongoDB.php';
+require_once '../databases/MongoConnector.php';
 require_once '../rabbit/RabbitMQConnection';
 require_once '../logging/LogWriter.php';
 use PhpAmqpLib\Message\AMQPMessage;
 use rabbit\RabbitMQConnection;
-use databases\MongoDB;
 use logging\LogWriter;
 
 
 
-$rmq_connection = new RabbitMQConnection('RetrieveExchange', 'storage');
+$rmq_connection = new RabbitMQConnection('storage_user', 'RetrieveExchange', 'storage');
 $rmq_channel = $rmq_connection->getChannel();
 
 // User Retrieve
 $userRetrieve_callback = function ($request) {
 	$logger = new LogWriter('/var/log/dnd/retrieval.log');
-	$client = (new MongoDB())->getConnection();
-	$DnDdn = $client->db;
-	$charCollection = $DnDdn->characters;
-	$userCollection = $DnDdn->users;
+	$client = (new MongoConnector())->getConnection();
+	$usersCollection = $client->storage->users;
+	$charactersCollection = $client->storage->characters;
 	$reqArray = unserialize($request->body);
 	$logger->info("This is body: " . $request->body);
 	$logger->info("This is 0: " . $reqArray[0]);
@@ -30,23 +28,23 @@ $userRetrieve_callback = function ($request) {
 
 
 	switch($requestFlow){
-		case "userDoc":
+		case "getUserStore":
 			$logger->info("Getting User doc...");
-			$userDocument = $userCollection->find(['username' => $username]);
+			$userDocument = $usersCollection->find(['username' => $username]);
 			$msg = new AMQPMessage (
 				$userDocument,
 				array('correlation_id' => $request->get('correlation_id'))
 				);
 			$logger->info("document found: " . $userDocument);
 			break;
-		case "charDoc":
-			$logger->info("Getting Character doc...");
-			$character = $charCollection->find(['_id' => $username]);
+		case "getCharacters":
+			$logger->info("Getting Characters");
+			$characters = $charactersCollection->find(['username' => $username]);
 			$msg = new AMQPMessage (
-				$character,
+				serialize($characters),
 				array('correlation_id' => $request->get('correlation_id'))
-				);
-			$logger->info("Character found: " . $character);
+			);
+			$logger->info("Characters found: " . $characters);
 			break;
 		default:
 			$msg = new AMQPMessage (

@@ -1,12 +1,13 @@
 <?php
+namespace databases;
 
 class ForumsDB {
 	private $connection;
 
-	private $host = 'host';
-	private $user = 'db user-name';
-	private $pass = 'db password';
-	private $name = 'db name';
+	private $host = '172.17.0.5';
+	private $user = 'forum-client';
+	private $pass = 'pass';
+	private $name = 'messageBoard';
 
 	public function __construct(){
 		$this->connection = new PDO(

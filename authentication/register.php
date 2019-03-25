@@ -3,25 +3,22 @@ require_once '../vendor/autoload.php';
 require_once '../databases/AuthDB.php';
 require_once '../rabbit/RabbitMQConnection.php';
 require_once '../logging/LogWriter.php';
+require_once '../databases/MongoConnector.php';
 use PhpAmqpLib\Message\AMQPMessage;
-use databases\AuthDB;
-use databases\MongoDB;
 use logging\LogWriter;
+use rabbit\RabbitMQConnection;
 
-$rmq_connection = new RabbitMQConnection('RegisterExchange', 'authentication');
+$rmq_connection = new RabbitMQConnection('auth_user', 'RegisterExchange', 'authentication');
 $rmq_channel = $rmq_connection->getChannel();
 
 //register
 $register_callback = function ($request) {
-	$db_connection = (new AuthDB())->getConnection();
-    $logger = new LogWriter('/var/log/dnd/register.log');
-    $client = (new MongoDB())->getConnection();
-    $database = $client->db;
-    $userCollection = $database->users;
-	$logger->info("Registering User...");
-	$result = unserialize($request->body);
-	$user = $result[0];
-	$pass = $result[1];
+	$mysql_connection = (new AuthDB())->getConnection();
+	$logger = new LogWriter('/var/log/dnd/register.log');
+	$logger->info("Registering username...");
+	$requestData = unserialize($request->body);
+	$username = $requestData[0];
+	$pass = $requestData[1];
 	$error = "E";
 	$success = "S";
 	$passhash = password_hash($pass, PASSWORD_DEFAULT);
@@ -36,31 +33,27 @@ $register_callback = function ($request) {
 		$sql = "CALL createUser(?,?)";
 
 		// prepare for execution of the stored procedure
-		$stmt = $db_connection->prepare($sql);
+		$stmt = $mysql_connection->prepare($sql);
 
 		// pass value to the command
-		$stmt->bindParam(1, $user, PDO::PARAM_STR);
+		$stmt->bindParam(1, $username, PDO::PARAM_STR);
 		$stmt->bindParam(2, $passhash, PDO::PARAM_STR);
 
 		// execute the stored procedure
-		$isSuccessful = $stmt->execute();
+		$stmt->execute();
 
 		$msg = new AMQPMessage (
 			$success,
 			array('correlation_id' => $request->get('correlation_id'))
 		);
 
-        $logger->info("Successful");
-
-        $x=
-        
-        $insertDoc = $collection->insertOne({
-            
-    });
+		$logger->info("Successful");
 
 	} catch (PDOException $e) {
 		$logger->error("Error occurred:" . $e->getMessage());
 	}
+
+	MongoConnector::initUserStorage($username);
 
 	$request->delivery_info['channel']->basic_publish( $msg, '', $request->get('reply_to'));
 	$logger->info("Delivered Message");
@@ -68,7 +61,7 @@ $register_callback = function ($request) {
 };
 
 $rmq_channel->basic_qos(null, 1, null);
-$rmq_channel->basic_consume($queue_name, '', false, true, false, false, $register_callback);
+$rmq_channel->basic_consume($rmq_connection->getQueueName(), '', false, true, false, false, $register_callback);
 
 while (true) {
 	$rmq_channel->wait();
