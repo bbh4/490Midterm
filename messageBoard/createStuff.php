@@ -8,7 +8,7 @@ use databases\ForumsDB;
 use logging\LogWriter;
 
 // TODO Rename this file
-$rmq_connection = new RabbitMQConnection('createStuffExchange', 'vhost');
+$rmq_connection = new RabbitMQConnection('CreatePostsExchange', 'messageBoard');
 $rmq_channel = $rmq_connection->getChannel();
 
 //Create Stuff
