@@ -8,7 +8,7 @@ use rabbit\RabbitMQConnection;
 use databases\AuthDB;
 use logging\LogWriter;
 
-$rmq_connection = new RabbitMQConnection('LoginExchange', 'userAuthentication');
+$rmq_connection = new RabbitMQConnection('LoginExchange', 'authentication');
 $rmq_channel = $rmq_connection->getChannel();
 
 $login_callback = function($request) {

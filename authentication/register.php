@@ -5,15 +5,19 @@ require_once '../rabbit/RabbitMQConnection.php';
 require_once '../logging/LogWriter.php';
 use PhpAmqpLib\Message\AMQPMessage;
 use databases\AuthDB;
+use databases\MongoDB;
 use logging\LogWriter;
 
-$rmq_connection = new RabbitMQConnection('RegisterExchange', 'userAuthentication');
+$rmq_connection = new RabbitMQConnection('RegisterExchange', 'authentication');
 $rmq_channel = $rmq_connection->getChannel();
 
 //register
 $register_callback = function ($request) {
 	$db_connection = (new AuthDB())->getConnection();
-	$logger = new LogWriter('/var/log/dnd/register.log');
+    $logger = new LogWriter('/var/log/dnd/register.log');
+    $client = (new MongoDB())->getConnection();
+    $database = $client->db;
+    $userCollection = $database->users;
 	$logger->info("Registering User...");
 	$result = unserialize($request->body);
 	$user = $result[0];
@@ -46,7 +50,13 @@ $register_callback = function ($request) {
 			array('correlation_id' => $request->get('correlation_id'))
 		);
 
-		$logger->info("Successful");
+        $logger->info("Successful");
+
+        $x=
+        
+        $insertDoc = $collection->insertOne({
+            
+    });
 
 	} catch (PDOException $e) {
 		$logger->error("Error occurred:" . $e->getMessage());
