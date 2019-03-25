@@ -1,7 +1,7 @@
 <?php
 require_once '../vendor/autoload.php';
 require_once '../databases/MongoConnector.php';
-require_once '../rabbit/RabbitMQConnection';
+require_once '../rabbit/RabbitMQConnection.php';
 require_once '../logging/LogWriter.php';
 use PhpAmqpLib\Message\AMQPMessage;
 use rabbit\RabbitMQConnection;

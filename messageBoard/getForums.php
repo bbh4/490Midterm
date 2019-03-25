@@ -1,14 +1,13 @@
 <?php
 require_once '../vendor/autoload.php';
 require_once '../databases/ForumsDB.php';
-require_once '../rabbit/RabbitMQConnection';
+require_once '../rabbit/RabbitMQConnection.php';
 require_once '../logging/LogWriter.php';
 use PhpAmqpLib\Message\AMQPMessage;
 use rabbit\RabbitMQConnection;
-use databases\ForumsDB;
 use logging\LogWriter;
 
-$rmq_connection = new RabbitMQConnection('GetPostsExchange', 'messageBoard');
+$rmq_connection = new RabbitMQConnection('forums_user','GetPostsExchange', 'messageBoard');
 $rmq_channel = $rmq_connection->getChannel();
 
 //get forums
@@ -19,7 +18,7 @@ $GetForums_callback = function ($request) {
 	$requestData = unserialize($request->body);
 	$reqStr = $requestData[0];
 	$id = $requestData[1];
-	$error = "E";
+	$error = 'E';
 
 	try {
 
@@ -69,7 +68,7 @@ $GetForums_callback = function ($request) {
 		$logger->error("Error occurred:" . $e->getMessage());
 	}
 
-	$request->delivery_info['rmq_channel']->basic_publish( $msg, '', $request->get('reply_to'));
+	$request->delivery_info['channel']->basic_publish($msg, '', $request->get('reply_to'));
 	$logger->info("Sent back Message");
 };
 

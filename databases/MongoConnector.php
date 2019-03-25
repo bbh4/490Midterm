@@ -10,7 +10,18 @@ class MongoConnector {
 	private $pass = 'pass';
 
 	public function __construct(){
-		$this->connection = new Client('mongodb://' . $this->host, array('username' => $this->user, 'password' => $this->pass));
+		$this->connection = new Client('mongodb://' . $this->host,
+		array (
+			'username' => $this->user,
+			'password' => $this->pass
+		),
+		array (
+			'typeMap' => array (
+				'document' => 'array',
+				'root' => 'array'
+			)
+		)
+	);
 	}
 	public function getConnection(){
 		return $this->connection;

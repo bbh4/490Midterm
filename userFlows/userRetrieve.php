@@ -1,7 +1,7 @@
 <?php
 require_once '../vendor/autoload.php';
 require_once '../databases/MongoConnector.php';
-require_once '../rabbit/RabbitMQConnection';
+require_once '../rabbit/RabbitMQConnection.php';
 require_once '../logging/LogWriter.php';
 use PhpAmqpLib\Message\AMQPMessage;
 use rabbit\RabbitMQConnection;
@@ -39,7 +39,9 @@ $userRetrieve_callback = function ($request) {
 			break;
 		case "getCharacters":
 			$logger->info("Getting Characters");
-			$characters = $charactersCollection->find(['username' => $username]);
+			$cursor = $charactersCollection->find(['username' => $username]);
+			$characters = iterator_to_array($cursor);
+
 			$msg = new AMQPMessage (
 				serialize($characters),
 				array('correlation_id' => $request->get('correlation_id'))
@@ -59,7 +61,6 @@ $logger->info("Sent back Message");
 
 $rmq_channel->basic_qos(null, 1, null);
 
-$userRetrieve_callback = execute();
 $rmq_channel->basic_consume($queue_name, '', false, true, false, false, $userRetrieve_callback);
 
 while (true) {

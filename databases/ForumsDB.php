@@ -1,5 +1,4 @@
 <?php
-namespace databases;
 
 class ForumsDB {
 	private $connection;

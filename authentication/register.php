@@ -7,6 +7,7 @@ require_once '../databases/MongoConnector.php';
 use PhpAmqpLib\Message\AMQPMessage;
 use logging\LogWriter;
 use rabbit\RabbitMQConnection;
+const CORR_ID = "correlation_id";
 
 $rmq_connection = new RabbitMQConnection('auth_user', 'RegisterExchange', 'authentication');
 $rmq_channel = $rmq_connection->getChannel();
@@ -25,7 +26,7 @@ $register_callback = function ($request) {
 
 	$msg = new AMQPMessage (
 		$error,
-		array('correlation_id' => $request->get('correlation_id'))
+		array(CORR_ID => $request->get(CORR_ID))
 	);
 
 	try {
@@ -44,7 +45,7 @@ $register_callback = function ($request) {
 
 		$msg = new AMQPMessage (
 			$success,
-			array('correlation_id' => $request->get('correlation_id'))
+			array(CORR_ID => $request->get(CORR_ID))
 		);
 
 		$logger->info("Successful");
@@ -55,7 +56,7 @@ $register_callback = function ($request) {
 
 	MongoConnector::initUserStorage($username);
 
-	$request->delivery_info['channel']->basic_publish( $msg, '', $request->get('reply_to'));
+	$request->delivery_info['channel']->basic_publish($msg, '', $request->get('reply_to'));
 	$logger->info("Delivered Message");
 
 };
